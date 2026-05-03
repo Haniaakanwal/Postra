@@ -9,7 +9,19 @@ const followModel = require("../models/follow.model")
 const imgkit = new ImageKit({
   privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
 })
+// ── add this helper at the top after your imports ──
+const cookieOptions = {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production" ? true : false,
+    maxAge: 24 * 60 * 60 * 1000
+}
 
+const clearCookieOptions = {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production" ? true : false,
+}
 async function registerController(req, res) {
     const { username, email, password, bio} = req.body
   console.log("req.file →", req.file)        // ← ADD THIS
@@ -20,7 +32,7 @@ async function registerController(req, res) {
     }).select('+password')
 
     if (UserExist) {
-        return res.status(409), json({
+        return res.status(409).json({
             message: "User already Exist" +
                 (UserExist.email = email ?
                     "Email Already exist" : "Username already exist"
@@ -53,7 +65,7 @@ async function registerController(req, res) {
         username: user.username
     }, process.env.jwt_secret, { expiresIn: "1d" })
 
-    res.cookie("token", token)
+    res.cookie("token", token, cookieOptions) 
 
     res.status(201).json({
         message: "Account created successfully",
@@ -91,7 +103,7 @@ async function loginController (req, res) {
           username:user.username
     }, process.env.jwt_secret, { expiresIn: "1d" })
 
-    res.cookie("token", token)
+    res.cookie("token", token, cookieOptions) 
 
     res.status(201).json({
         message: "Login successfully",
@@ -119,11 +131,7 @@ async function getMeController(req,res) {
 }
 async function logoutController(req, res) {
     try {
-        // clear the cookie by setting it to empty with immediate expiry
-        res.clearCookie("token", {
-            httpOnly: true,
-            sameSite: "lax"
-        })
+      res.clearCookie("token", clearCookieOptions)
         res.status(200).json({ message: "Logged out successfully" })
     } catch (err) {
         res.status(500).json({ message: "Logout failed" })
@@ -149,11 +157,7 @@ async function deleteAccountController(req, res) {
         // delete the user
         await userModel.findByIdAndDelete(userId)
 
-        // clear the cookie
-        res.clearCookie("token", {
-            httpOnly: true,
-            sameSite: "lax"
-        })
+   res.clearCookie("token", clearCookieOptions)
 
         res.status(200).json({ message: "Account deleted successfully" })
 
