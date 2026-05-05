@@ -25,4 +25,11 @@ app.use(express.static(path.join(__dirname, "../dist")))  // ← ADD THIS
 app.get("/{*path}", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist", "index.html"))
 })
+
+// CORRECT — use process.cwd() which works on both local and Vercel:
+app.use(express.static(path.join(process.cwd(), "dist")))
+
+app.get("/{*path}", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "dist", "index.html"))
+})
 module.exports = app
